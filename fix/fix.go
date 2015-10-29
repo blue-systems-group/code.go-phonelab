@@ -22,7 +22,7 @@ type Logline struct {
 	PID       uint32
 	TID       uint32
 	level     string
-	rest      string
+	message   string
 }
 
 var formatters = [...]*regexp.Regexp{
@@ -93,7 +93,9 @@ func check(path string, f os.FileInfo, err error) error {
 	}
 	if oldDirPattern.MatchString(path) {
 		waitGroup.Add(1)
-		go parseFile(path)
+		go func(path string) {
+			phonelab.Parse(path)
+			waitGroup.
 	}
 	return nil
 }
