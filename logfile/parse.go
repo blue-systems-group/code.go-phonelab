@@ -25,18 +25,6 @@ type Logline struct {
 	message   string
 }
 
-type ByTime []Logline
-
-func (a ByTime) Len() int      { return len(a) }
-func (a ByTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByTime) Less(i, j int) bool {
-	if a[i].timestamp.Equal(a[j].timestamp) {
-		return a[i].fileorder < a[j].fileorder
-	} else {
-		return a[i].timestamp.Before(a[j].timestamp)
-	}
-}
-
 var formatters = [...]*regexp.Regexp{
 	regexp.MustCompile(`^(?P<hashedID>[0-9a-f]{40})\s+(?:\d+)\s+(?P<unixtime>\d+)\.(?P<fileorder>\d+)\s+(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\s+(?P<PID>\d+)\s+(?P<TID>\d+)\s+(?P<level>\w+)(?P<message>.*)$`),
 }
