@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -18,15 +19,29 @@ type Logline struct {
 	unixtime  uint64
 	fileorder uint16
 	timestamp time.Time
-	PID       uint32
-	TID       uint32
+	PID       uint16
+	TID       uint16
 	level     string
 	message   string
 }
 
-var formatters = [...]*regexp.Regexp{
-	regexp.MustCompile(`^(?P<hashedID>[0-9a-f]{40})\s+(?:\d+)\s+(?P<unixtime>[\d.]+)\s+(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\s+(?P<PID>\d+)\s+(?P<TID>\d+)\s+(?P<level>\w+)(?P<message>.*)$`),
+type ByTime []Logline
+
+func (a ByTime) Len() int      { return len(a) }
+func (a ByTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByTime) Less(i, j int) bool {
+	if a[i].timestamp.Equal(a[j].timestamp) {
+		return a[i].fileorder < a[j].fileorder
+	} else {
+		return a[i].timestamp.Before(a[j].timestamp)
+	}
 }
+
+var formatters = [...]*regexp.Regexp{
+	regexp.MustCompile(`^(?P<hashedID>[0-9a-f]{40})\s+(?:\d+)\s+(?P<unixtime>\d+)\.(?P<fileorder>\d+)\s+(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\s+(?P<PID>\d+)\s+(?P<TID>\d+)\s+(?P<level>\w+)(?P<message>.*)$`),
+}
+
+var dateFormat = "2006-01-02 15:04:05"
 
 func count(reader io.Reader) (int, error) {
 	buf := make([]byte, 32768)
@@ -107,8 +122,39 @@ func Parse(filename string) ([]Logline, error) {
 			}
 			matches[name] = match[i]
 		}
+		unixtime, err := strconv.ParseUint(matches["unixtime"], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		fileorder64, err := strconv.ParseUint(matches["fileorder"], 10, 16)
+		if err != nil {
+			return nil, err
+		}
+		fileorder := uint16(fileorder64)
+		timestamp, err := time.Parse(dateFormat, matches["timestamp"])
+		if err != nil {
+			return nil, err
+		}
+		PID64, err := strconv.ParseUint(matches["PID"], 10, 16)
+		if err != nil {
+			return nil, err
+		}
+		PID := uint16(PID64)
+		TID64, err := strconv.ParseUint(matches["TID"], 10, 16)
+		if err != nil {
+			return nil, err
+		}
+		TID := uint16(TID64)
+
 		loglines = append(loglines, Logline{
-			hashedID: matches["hashedID"],
+			hashedID:  matches["hashedID"],
+			unixtime:  unixtime,
+			fileorder: fileorder,
+			timestamp: timestamp,
+			PID:       PID,
+			TID:       TID,
+			level:     matches["level"],
+			message:   matches["message"],
 		})
 	}
 	if len(loglines) != lineCount {
