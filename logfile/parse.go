@@ -22,11 +22,12 @@ type Logline struct {
 	PID       uint16
 	TID       uint16
 	level     string
+	tag       string
 	message   string
 }
 
 var formatters = [...]*regexp.Regexp{
-	regexp.MustCompile(`^(?P<hashedID>[0-9a-f]{40})\s+(?:\d+)\s+(?P<unixtime>\d+)\.(?P<fileorder>\d+)\s+(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\s+(?P<PID>\d+)\s+(?P<TID>\d+)\s+(?P<level>\w+)(?P<message>.*)$`),
+	regexp.MustCompile(`^(?P<hashedID>[0-9a-f]{40})\s+(?:\d+)\s+(?P<unixtime>\d+)\.(?P<fileorder>\d+)\s+(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\s+(?P<PID>\d+)\s+(?P<TID>\d+)\s+(?P<level>\w+)\s+(?P<tag>[^\t]+)\t(?P<message>.*)$`),
 }
 
 var dateFormat = "2006-01-02 15:04:05"
@@ -142,6 +143,7 @@ func Parse(filename string) ([]Logline, error) {
 			PID:       PID,
 			TID:       TID,
 			level:     matches["level"],
+			tag:       matches["tag"],
 			message:   matches["message"],
 		})
 	}

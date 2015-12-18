@@ -28,4 +28,8 @@ func TestSort(t *testing.T) {
 	if !reflect.DeepEqual(sorted_loglines, unsorted_loglines) {
 		t.Error("Sorted loglines do not match.")
 	}
+	sort.Sort(ByTime(sorted_loglines))
+	if !reflect.DeepEqual(sorted_loglines, unsorted_loglines) {
+		t.Error("Sorted loglines do not match after unnecessary sort.")
+	}
 }
